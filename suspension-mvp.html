@@ -1,0 +1,454 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>F1 Suspension — Corner Calculator (Beautiful UI)</title>
+
+  <!-- Google font (optional) -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+  <style>
+    :root{
+      --bg-1: #07101a;
+      --bg-2: #071822;
+      --card: rgba(255,255,255,0.04);
+      --glass: rgba(255,255,255,0.03);
+      --muted: #9fb0c2;
+      --accent: #fb9d39;
+      --accent-2: #ffb76b;
+      --glass-2: rgba(255,255,255,0.02);
+      --success: #6fe3a7;
+      --danger: #ff6b6b;
+      --mono: "Roboto Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, "Segoe UI Mono", monospace;
+      color-scheme: dark;
+    }
+
+    *{box-sizing:border-box}
+    html,body{height:100%;margin:0;background:
+      radial-gradient(1000px 500px at 10% 10%, rgba(91,134,255,0.04), transparent 8%),
+      radial-gradient(800px 400px at 90% 80%, rgba(251,157,57,0.03), transparent 10%),
+      linear-gradient(180deg,var(--bg-1),var(--bg-2));font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;color:#e6eef6; -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;}
+
+    .page{
+      max-width:1200px;margin:28px auto;padding:22px;display:grid;grid-template-columns:1fr;gap:18px;
+    }
+
+    /* header */
+    header{
+      display:flex;align-items:center;justify-content:space-between;gap:12px;
+    }
+    .brand{
+      display:flex;align-items:center;gap:12px;
+    }
+    .logo{
+      width:56px;height:56px;border-radius:12px;display:grid;place-items:center;
+      background:linear-gradient(135deg, rgba(251,157,57,0.18), rgba(91,134,255,0.08));box-shadow:0 8px 30px rgba(11,16,26,0.6);
+      border:1px solid rgba(255,255,255,0.03);
+    }
+    .logo svg{filter:drop-shadow(0 6px 18px rgba(11,16,26,0.6))}
+
+    h1{margin:0;font-size:18px;letter-spacing:0.2px}
+    .subtitle{color:var(--muted);font-size:13px}
+
+    /* layout */
+    .grid{
+      display:grid;grid-template-columns:360px 1fr 380px;gap:18px;
+    }
+
+    /* card */
+    .card{
+      background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+      border-radius:14px;padding:18px;border:1px solid rgba(255,255,255,0.03);
+      box-shadow: 0 8px 30px rgba(2,6,12,0.6);backdrop-filter: blur(6px);
+    }
+
+    /* input form */
+    .form-row{display:flex;flex-direction:column;margin-bottom:12px}
+    label{font-size:13px;color:var(--muted);margin-bottom:6px}
+    input[type=number], input[type=text], select{
+      width:100%;padding:10px 12px;border-radius:10px;border:1px solid rgba(255,255,255,0.04);
+      background:var(--glass);color:var(--accent);font-weight:700;font-size:14px;outline:none;
+      transition:box-shadow .18s, transform .12s;
+    }
+    input[type=number]:focus, select:focus{box-shadow:0 6px 18px rgba(91,134,255,0.06); transform:translateY(-1px);}
+
+    .controls{display:flex;gap:10px;margin-top:12px}
+    .btn{
+      display:inline-grid;place-items:center;padding:10px 14px;border-radius:10px;font-weight:800;border:none;
+      cursor:pointer;letter-spacing:0.6px;
+    }
+    .btn-primary{
+      background:linear-gradient(180deg,var(--accent),var(--accent-2));color:#041016;box-shadow:0 10px 30px rgba(251,157,57,0.08);
+    }
+    .btn-ghost{
+      background:transparent;border:1px solid rgba(255,255,255,0.04);color:var(--muted)
+    }
+    .btn:active{transform:translateY(1px)}
+
+    .small{font-size:13px;color:var(--muted);margin-top:8px}
+
+    /* outputs */
+    .outputs{display:grid;gap:12px}
+    .stat{
+      display:flex;align-items:center;justify-content:space-between;padding:12px;border-radius:12px;background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.005));
+      border:1px solid rgba(255,255,255,0.02)
+    }
+    .stat .label{color:var(--muted);font-size:13px}
+    .stat .value{font-family:var(--mono);font-weight:800;font-size:18px;color:#ecf8ff}
+
+    .note{
+      padding:10px;border-radius:10px;background:linear-gradient(90deg, rgba(111,227,167,0.06), rgba(255,107,107,0.03));
+      font-size:13px;color:var(--muted)
+    }
+
+    /* explain */
+    pre{margin:0;background:linear-gradient(180deg, rgba(0,0,0,0.25), rgba(0,0,0,0.14));padding:12px;border-radius:10px;color:#dff3ff;overflow:auto;font-size:13px}
+    .explain-wrap{max-height:520px;overflow:auto}
+
+    /* saved list */
+    .saved-controls{display:flex;gap:8px;margin-top:10px}
+    .linkish{background:transparent;border:1px solid rgba(255,255,255,0.03);padding:8px;border-radius:8px;color:var(--muted);cursor:pointer}
+
+    /* responsive */
+    @media (max-width:1100px){
+      .grid{grid-template-columns:1fr;align-items:start}
+      .page{padding:14px}
+    }
+
+    /* subtle animations */
+    .stat { transition:transform .14s ease, box-shadow .14s ease; }
+    .stat:hover{ transform:translateY(-4px); box-shadow:0 18px 40px rgba(2,6,12,0.6) }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header>
+      <div class="brand">
+        <div class="logo" aria-hidden="true">
+          <!-- small wheel-ish svg -->
+          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="12" cy="12" r="9" stroke="white" stroke-opacity="0.2" stroke-width="1.4"/>
+            <circle cx="12" cy="12" r="3.2" fill="white" fill-opacity="0.08"/>
+            <path d="M12 5v3M12 16v3M5 12h3M16 12h3M6.2 6.2l2 2M15.8 15.8l2 2M6.2 17.8l2-2M15.8 8.2l2-2" stroke="white" stroke-opacity="0.06" stroke-width="1.2" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div>
+          <h1>F1 Suspension — Corner Calculator</h1>
+          <div class="subtitle">Ride frequency · spring & damper sizing · explain mode</div>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:10px;align-items:center">
+        <button id="btnLoadExample" class="linkish">Load example</button>
+        <button id="btnExport" class="linkish">Export JSON</button>
+      </div>
+    </header>
+
+    <main class="grid" style="margin-top:8px">
+      <!-- inputs -->
+      <section class="card">
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <div>
+            <strong style="font-size:15px">Inputs — Per Corner</strong><br>
+            <span class="small">Provide corner-specific numbers to size spring & damper</span>
+          </div>
+          <div style="text-align:right;color:var(--muted);font-size:12px">Units: kg · Hz · dimensionless</div>
+        </div>
+
+        <div style="height:12px"></div>
+
+        <div class="form-row">
+          <label>Sprung mass at corner (kg)</label>
+          <input id="m_sprung" type="number" step="0.1" value="300.0" />
+        </div>
+
+        <div class="form-row">
+          <label>Desired ride frequency (Hz)</label>
+          <input id="freq" type="number" step="0.01" value="2.00" />
+        </div>
+
+        <div class="form-row">
+          <label>Motion ratio (wheel → spring)</label>
+          <input id="mr" type="number" step="0.01" value="0.80" />
+        </div>
+
+        <div class="form-row">
+          <label>Damping ratio ζ (0.0 - 1.0)</label>
+          <input id="zeta" type="number" step="0.01" value="0.25" />
+        </div>
+
+        <div class="controls">
+          <button id="btnCalc" class="btn btn-primary">Calculate</button>
+          <button id="btnSave" class="btn btn-ghost">Save setup</button>
+          <button id="btnClear" class="btn btn-ghost">Reset</button>
+        </div>
+
+        <p class="small">Tip: use <strong>Save setup</strong> to store configurations locally. Use the example to see typical F1-ish numbers.</p>
+      </section>
+
+      <!-- outputs -->
+      <aside class="card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+          <strong style="font-size:15px">Outputs</strong>
+          <div style="color:var(--muted);font-size:13px">Live results</div>
+        </div>
+
+        <div class="outputs">
+          <div class="stat">
+            <div class="label">Wheel stiffness <small style="opacity:.9">k<sub>corner</sub></small></div>
+            <div id="k_corner" class="value">— N/m</div>
+          </div>
+
+          <div class="stat">
+            <div class="label">Physical spring stiffness <small style="opacity:.9">k<sub>spring</sub></small></div>
+            <div id="k_spring" class="value">— N/m</div>
+          </div>
+
+          <div class="stat">
+            <div class="label">Critical damping <small style="opacity:.9">c<sub>crit</sub></small></div>
+            <div id="c_crit" class="value">— Ns/m</div>
+          </div>
+
+          <div class="stat">
+            <div style="display:flex;flex-direction:column">
+              <div class="label">Damper coefficient at wheel <small style="opacity:.9">c</small></div>
+              <div class="small" style="color:var(--muted)">Piston equivalent below</div>
+            </div>
+            <div style="text-align:right">
+              <div id="c" class="value" style="font-size:16px">— Ns/m</div>
+              <div id="c_piston" class="small" style="margin-top:6px;font-family:var(--mono);color:var(--muted)">— Ns/m</div>
+            </div>
+          </div>
+
+          <div class="note" id="sanity">—</div>
+        </div>
+
+      </aside>
+
+      <!-- explain & saved -->
+      <section class="card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+          <strong style="font-size:15px">Explain — step-by-step</strong>
+          <div style="color:var(--muted);font-size:13px">Digit-by-digit arithmetic</div>
+        </div>
+
+        <div class="explain-wrap" id="explain">
+          <pre id="explainText">Press Calculate to see step-by-step arithmetic.</pre>
+        </div>
+
+        <div style="height:12px"></div>
+
+        <div>
+          <label style="font-size:13px;color:var(--muted)">Saved setups</label>
+          <div style="display:flex;gap:8px;align-items:center;margin-top:8px">
+            <select id="savedList" style="flex:1;padding:10px;border-radius:10px;background:var(--glass-2);border:1px solid rgba(255,255,255,0.03);color:var(--muted)"></select>
+            <button id="btnLoad" class="linkish">Load</button>
+            <button id="btnDelete" class="linkish">Delete</button>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    // --- same math & UI logic as before, unchanged functionality ---
+
+    function wheelStiffnessFromFreq(m_sprung, freq) {
+      const twoPiF = 2 * Math.PI * freq;
+      const k = Math.pow(twoPiF, 2) * m_sprung;
+      return { k, twoPiF };
+    }
+    function springStiffnessFromMotionRatio(k_corner, MR) {
+      return k_corner / (MR * MR);
+    }
+    function criticalDamping(k_corner, m_sprung) {
+      return 2 * Math.sqrt(k_corner * m_sprung);
+    }
+    function damperFromDampingRatio(c_crit, zeta) {
+      return c_crit * zeta;
+    }
+
+    const el = id => document.getElementById(id);
+    const inputs = { m_sprung: el('m_sprung'), freq: el('freq'), mr: el('mr'), zeta: el('zeta') };
+    const outputs = { k_corner: el('k_corner'), k_spring: el('k_spring'), c_crit: el('c_crit'), c: el('c'), c_piston: el('c_piston'), sanity: el('sanity') };
+    const explainText = el('explainText');
+
+    function fmt(x, dp=3) {
+      if (!isFinite(x)) return '—';
+      const abs = Math.abs(x);
+      if (abs >= 1e6) return x.toExponential(dp);
+      if (abs >= 1000) return x.toLocaleString(undefined, {maximumFractionDigits: dp});
+      return Number(x.toFixed(dp)).toString();
+    }
+
+    function calculateAndShow() {
+      const m = parseFloat(inputs.m_sprung.value) || 0;
+      const f = parseFloat(inputs.freq.value) || 0;
+      const MR = parseFloat(inputs.mr.value) || 0;
+      const zeta = parseFloat(inputs.zeta.value) || 0;
+
+      let notes = [];
+      if (m <= 0) notes.push('Sprung mass must be > 0 kg.');
+      if (f <= 0) notes.push('Frequency must be > 0 Hz.');
+      if (!(MR > 0)) notes.push('Motion ratio must be > 0.');
+      if (!(zeta >= 0 && zeta <= 2)) notes.push('Damping ratio ζ should be between 0 and 2.');
+
+      const { k: k_corner, twoPiF } = wheelStiffnessFromFreq(m, f);
+      const k_spring = springStiffnessFromMotionRatio(k_corner, MR);
+      const c_crit = criticalDamping(k_corner, m);
+      const c = damperFromDampingRatio(c_crit, zeta);
+      const c_piston = c / (MR * MR);
+
+      outputs.k_corner.textContent = (fmt(k_corner) + ' N/m');
+      outputs.k_spring.textContent = (fmt(k_spring) + ' N/m');
+      outputs.c_crit.textContent = (fmt(c_crit) + ' Ns/m');
+      outputs.c.textContent = (fmt(c) + ' Ns/m');
+      outputs.c_piston.textContent = (fmt(c_piston) + ' Ns/m');
+      outputs.sanity.textContent = notes.length ? notes.join(' ') : 'All good — MR² = ' + fmt(MR*MR,4);
+
+      // explain build
+      const steps = [];
+      steps.push('Given:');
+      steps.push(' Sprung mass (m) = ' + m + ' kg');
+      steps.push(' Desired ride freq (f) = ' + f + ' Hz');
+      steps.push(' Motion ratio (MR) = ' + MR);
+      steps.push(' Damping ratio (ζ) = ' + zeta);
+      steps.push('');
+      steps.push('Step 1: compute 2πf');
+      steps.push('  2 × π × f = 2 × ' + Math.PI + ' × ' + f + ' = ' + fmt(twoPiF, 12));
+      steps.push('');
+      steps.push('Step 2: (2πf)²');
+      const twoPiFSq = Math.pow(twoPiF, 2);
+      steps.push('  (' + fmt(twoPiF,12) + ')² = ' + fmt(twoPiFSq,12));
+      steps.push('');
+      steps.push('Step 3: wheel stiffness k_corner = (2πf)² × m');
+      const kcornerStr = fmt(k_corner,12);
+      steps.push('  k_corner = ' + fmt(twoPiFSq,12) + ' × ' + m + ' = ' + kcornerStr + ' N/m');
+      steps.push('');
+      steps.push('Step 4: convert to physical spring stiffness');
+      steps.push('  k_spring = k_corner / MR² = ' + kcornerStr + ' / ' + fmt(MR*MR,8));
+      steps.push('  k_spring = ' + fmt(k_spring,12) + ' N/m');
+      steps.push('');
+      steps.push('Step 5: critical damping c_crit = 2 × sqrt(k_corner × m)');
+      const prod = k_corner * m;
+      steps.push('  k_corner × m = ' + fmt(k_corner,6) + ' × ' + m + ' = ' + fmt(prod,6));
+      const sqrtProd = Math.sqrt(prod);
+      steps.push('  sqrt(...) = ' + fmt(sqrtProd,6));
+      steps.push('  c_crit = 2 × ' + fmt(sqrtProd,6) + ' = ' + fmt(c_crit,6) + ' Ns/m');
+      steps.push('');
+      steps.push('Step 6: desired damper c = ζ × c_crit = ' + zeta + ' × ' + fmt(c_crit,6) + ' = ' + fmt(c,6) + ' Ns/m');
+      steps.push('Step 7: piston-equivalent (account motion ratio): c_piston = c / MR² = ' + fmt(c_piston,6) + ' Ns/m');
+
+      explainText.textContent = steps.join('\\n');
+    }
+
+    // localStorage helpers
+    const savedKey = 'suspension_mvp_saved_setups';
+    function getSaved() {
+      try {
+        const raw = localStorage.getItem(savedKey);
+        return raw ? JSON.parse(raw) : {};
+      } catch(e) { return {}; }
+    }
+    function saveCurrent(name) {
+      const s = getSaved();
+      s[name] = {
+        m_sprung: inputs.m_sprung.value,
+        freq: inputs.freq.value,
+        mr: inputs.mr.value,
+        zeta: inputs.zeta.value,
+        created: new Date().toISOString()
+      };
+      localStorage.setItem(savedKey, JSON.stringify(s));
+      refreshSavedList();
+    }
+    function refreshSavedList() {
+      const s = getSaved();
+      const sel = el('savedList');
+      sel.innerHTML = '<option value="">-- select saved setup --</option>';
+      Object.keys(s).forEach(k => {
+        const opt = document.createElement('option');
+        opt.value = k;
+        opt.textContent = k + ' (' + new Date(s[k].created).toLocaleString() + ')';
+        sel.appendChild(opt);
+      });
+    }
+    function loadSelected() {
+      const sel = el('savedList');
+      const name = sel.value;
+      if (!name) return alert('Choose one from the dropdown.');
+      const s = getSaved();
+      const data = s[name];
+      inputs.m_sprung.value = data.m_sprung;
+      inputs.freq.value = data.freq;
+      inputs.mr.value = data.mr;
+      inputs.zeta.value = data.zeta;
+      calculateAndShow();
+    }
+    function deleteSelected() {
+      const sel = el('savedList');
+      const name = sel.value;
+      if (!name) return alert('Choose one from the dropdown.');
+      const s = getSaved();
+      delete s[name];
+      localStorage.setItem(savedKey, JSON.stringify(s));
+      refreshSavedList();
+    }
+
+    // event wiring
+    el('btnCalc').addEventListener('click', calculateAndShow);
+    el('btnClear').addEventListener('click', () => {
+      inputs.m_sprung.value = '300.0';
+      inputs.freq.value = '2.00';
+      inputs.mr.value = '0.80';
+      inputs.zeta.value = '0.25';
+      explainText.textContent = 'Press Calculate to see step-by-step arithmetic.';
+      outputs.k_corner.textContent = '— N/m';
+      outputs.k_spring.textContent = '— N/m';
+      outputs.c_crit.textContent = '— Ns/m';
+      outputs.c.textContent = '— Ns/m';
+      outputs.c_piston.textContent = '— Ns/m';
+      outputs.sanity.textContent = '—';
+    });
+
+    el('btnSave').addEventListener('click', () => {
+      const name = prompt('Name for this setup (e.g., "Monza Soft")');
+      if (!name) return;
+      saveCurrent(name);
+      alert('Saved: ' + name);
+    });
+    el('btnLoad').addEventListener('click', loadSelected);
+    el('btnDelete').addEventListener('click', () => {
+      if (!confirm('Delete selected saved setup?')) return;
+      deleteSelected();
+    });
+    el('btnExport').addEventListener('click', () => {
+      const payload = {
+        m_sprung: inputs.m_sprung.value,
+        freq: inputs.freq.value,
+        mr: inputs.mr.value,
+        zeta: inputs.zeta.value,
+        computed_at: new Date().toISOString()
+      };
+      const blob = new Blob([JSON.stringify(payload, null, 2)], {type:'application/json'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = 'suspension-setup.json'; document.body.appendChild(a); a.click(); a.remove();
+      URL.revokeObjectURL(url);
+    });
+
+    el('btnLoadExample').addEventListener('click', () => {
+      inputs.m_sprung.value = '300';
+      inputs.freq.value = '2.00';
+      inputs.mr.value = '0.80';
+      inputs.zeta.value = '0.25';
+      calculateAndShow();
+    });
+
+    // init
+    refreshSavedList();
+    calculateAndShow();
+  </script>
+</body>
+</html>
